@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>0DF47300-1AAF-4E9C-991C-BA6E75E7EF2D</string>
+	<key>IDESourceControlProjectName</key>
+	<string>ADZipURLProtocol</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>E8722BD5-799D-4B15-96AB-3839D6C6D132</key>
+		<string>ssh://scm.applidium.net/ADZipURLProtocol</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>Demo/ADZipURLProtocol.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>E8722BD5-799D-4B15-96AB-3839D6C6D132</key>
+		<string>../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>ssh://scm.applidium.net/ADZipURLProtocol</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>E8722BD5-799D-4B15-96AB-3839D6C6D132</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>E8722BD5-799D-4B15-96AB-3839D6C6D132</string>
+			<key>IDESourceControlWCCName</key>
+			<string>ADZipURLProtocol</string>
+		</dict>
+	</array>
+</dict>
+</plist>
