@@ -41,6 +41,7 @@ static NSArray * sADZipURLProtocolSearchPath = nil;
 
 - (id)initWithRequest:(NSURLRequest *)request cachedResponse:(NSCachedURLResponse *)cachedResponse client:(id < NSURLProtocolClient >)client {
     self = [super initWithRequest:request cachedResponse:cachedResponse client:client];
+    // We always return self even if there is an error, to properly fail the protocol call in the startLoading Method
     if (self) {
         // We store the request URL to send it back in the NSURLResponse, so the following requests properly handle any relative path
         _lastReqURL = request.URL;
@@ -58,7 +59,7 @@ static NSArray * sADZipURLProtocolSearchPath = nil;
         }
         if (_zip == NULL) {
             NSLog(@"Could not find a zipfile named \"%@\" in \"%@\"", archiveName, searchPath);
-            return nil;
+            return self;
         }
         // The following can be used to list every file in the _zip archive
         /*
@@ -81,30 +82,35 @@ static NSArray * sADZipURLProtocolSearchPath = nil;
         }
         if (_zipFile == NULL) {
             NSLog(@"Could not find a file named \"%@\" in archive", fileName);
-            return nil;
+            return self;
         }
         _readBuffer = malloc(AD_ZIP_PROTOCOL_READ_BUFFER_LENGTH);
         if (_readBuffer == NULL) {
             NSLog(@"Couldn't allocate read buffer !");
-            return nil;
+            return self;
         }
     }
     return self;
 }
 
 - (void)startLoading {
-    [self.client URLProtocol:self
-          didReceiveResponse:[[NSURLResponse alloc] initWithURL:_lastReqURL MIMEType:nil expectedContentLength:-1 textEncodingName:nil]
-          cacheStoragePolicy:NSURLCacheStorageNotAllowed];
-    int numberOfBytesRead;
-    do {
-        numberOfBytesRead = (int)zip_fread(_zipFile, _readBuffer, AD_ZIP_PROTOCOL_READ_BUFFER_LENGTH);
-        if (numberOfBytesRead >= 0) {
-            NSData * data = [NSData dataWithBytes:_readBuffer length:numberOfBytesRead];
-            [self.client URLProtocol:self didLoadData:data];
-        }
-    } while (numberOfBytesRead > 0);
-    [self.client URLProtocolDidFinishLoading:self];
+    if (_zip && _zipFile && _readBuffer) {
+        [self.client URLProtocol:self
+              didReceiveResponse:[[NSURLResponse alloc] initWithURL:_lastReqURL MIMEType:nil expectedContentLength:-1 textEncodingName:nil]
+              cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+        int numberOfBytesRead;
+        do {
+            numberOfBytesRead = (int)zip_fread(_zipFile, _readBuffer, AD_ZIP_PROTOCOL_READ_BUFFER_LENGTH);
+            if (numberOfBytesRead >= 0) {
+                NSData * data = [NSData dataWithBytes:_readBuffer length:numberOfBytesRead];
+                [self.client URLProtocol:self didLoadData:data];
+            }
+        } while (numberOfBytesRead > 0);
+        [self.client URLProtocolDidFinishLoading:self];
+    } else {
+        [self.client URLProtocol:self
+                didFailWithError:[NSError errorWithDomain:NSCocoaErrorDomain code:NSFileNoSuchFileError userInfo:nil]];
+    }
 }
 
 - (void)stopLoading {
