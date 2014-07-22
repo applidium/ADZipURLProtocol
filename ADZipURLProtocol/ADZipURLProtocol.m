@@ -58,53 +58,55 @@ static NSArray * sADZipURLProtocolSearchPath = nil;
         }
         if (_zip == NULL) {
             NSLog(@"Could not find a zipfile named \"%@\" in \"%@\"", archiveName, searchPath);
-            return nil;
-        }
-        // The following can be used to list every file in the _zip archive
-        /*
-         zip_int64_t numEntries = zip_get_num_entries(_zip, 0);
-         for (int i = 0; i <numEntries; i++) {
-         const char * name = zip_get_name(_zip, i, 0);
-         NSLog(@"File at index %d is \"%s\"",i, name);
-         }
-        */
+        } else {
+            // The following can be used to list every file in the _zip archive
+            /*
+             zip_int64_t numEntries = zip_get_num_entries(_zip, 0);
+             for (int i = 0; i <numEntries; i++) {
+             const char * name = zip_get_name(_zip, i, 0);
+             NSLog(@"File at index %d is \"%s\"",i, name);
+             }
+             */
 
-        NSString * fileName = request.URL.path;
-        if ([fileName hasPrefix:@"/"]) {
-            fileName = [fileName substringFromIndex:1]; // Remove the leading slash if present
-        }
-        _zipFile = zip_fopen(_zip, fileName.UTF8String, ZIP_FL_UNCHANGED);
-        if (_zipFile == NULL) { // Let's do as if we were a webserver and try appending "index.html" if the URL referenced a folder
-            NSLog(@"Could not find a file named \"%@\" in archive, trying to append index.html", fileName);
-            fileName = [fileName stringByAppendingPathComponent:@"index.html"];
+            NSString * fileName = request.URL.path;
+            if ([fileName hasPrefix:@"/"]) {
+                fileName = [fileName substringFromIndex:1]; // Remove the leading slash if present
+            }
             _zipFile = zip_fopen(_zip, fileName.UTF8String, ZIP_FL_UNCHANGED);
-        }
-        if (_zipFile == NULL) {
-            NSLog(@"Could not find a file named \"%@\" in archive", fileName);
-            return nil;
-        }
-        _readBuffer = malloc(AD_ZIP_PROTOCOL_READ_BUFFER_LENGTH);
-        if (_readBuffer == NULL) {
-            NSLog(@"Couldn't allocate read buffer !");
-            return nil;
+            if (_zipFile == NULL) { // Let's do as if we were a webserver and try appending "index.html" if the URL referenced a folder
+                NSLog(@"Could not find a file named \"%@\" in archive, trying to append index.html", fileName);
+                fileName = [fileName stringByAppendingPathComponent:@"index.html"];
+                _zipFile = zip_fopen(_zip, fileName.UTF8String, ZIP_FL_UNCHANGED);
+            }
+            if (_zipFile == NULL) {
+                NSLog(@"Could not find a file named \"%@\" in archive", fileName);
+            }
+            _readBuffer = malloc(AD_ZIP_PROTOCOL_READ_BUFFER_LENGTH);
+            if (_readBuffer == NULL) {
+                NSLog(@"Couldn't allocate read buffer !");
+            }
         }
     }
     return self;
 }
 
 - (void)startLoading {
-    [self.client URLProtocol:self
-          didReceiveResponse:[[NSURLResponse alloc] initWithURL:_lastReqURL MIMEType:nil expectedContentLength:-1 textEncodingName:nil]
-          cacheStoragePolicy:NSURLCacheStorageNotAllowed];
-    int numberOfBytesRead;
-    do {
-        numberOfBytesRead = (int)zip_fread(_zipFile, _readBuffer, AD_ZIP_PROTOCOL_READ_BUFFER_LENGTH);
-        if (numberOfBytesRead >= 0) {
-            NSData * data = [NSData dataWithBytes:_readBuffer length:numberOfBytesRead];
-            [self.client URLProtocol:self didLoadData:data];
-        }
-    } while (numberOfBytesRead > 0);
-    [self.client URLProtocolDidFinishLoading:self];
+    if (_zip && _zipFile && _readBuffer) {
+        [self.client URLProtocol:self
+              didReceiveResponse:[[NSURLResponse alloc] initWithURL:_lastReqURL MIMEType:nil expectedContentLength:-1 textEncodingName:nil]
+              cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+        int numberOfBytesRead;
+        do {
+            numberOfBytesRead = (int)zip_fread(_zipFile, _readBuffer, AD_ZIP_PROTOCOL_READ_BUFFER_LENGTH);
+            if (numberOfBytesRead >= 0) {
+                NSData * data = [NSData dataWithBytes:_readBuffer length:numberOfBytesRead];
+                [self.client URLProtocol:self didLoadData:data];
+            }
+        } while (numberOfBytesRead > 0);
+        [self.client URLProtocolDidFinishLoading:self];
+    } else {
+        [self.client URLProtocol:self didFailWithError:[NSError errorWithDomain:NSCocoaErrorDomain code:NSFileNoSuchFileError userInfo:nil]];
+    }
 }
 
 - (void)stopLoading {
